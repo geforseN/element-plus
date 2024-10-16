@@ -176,13 +176,9 @@ describe('Notification.vue', () => {
       expect(wrapper.vm.visible).toBe(true)
 
       await wrapper.find('[role=alert]').trigger('mouseleave')
-      // expect(wrapper.vm.timer).not.toBe(null)
       expect(wrapper.vm.visible).toBe(true)
-      // expect(wrapper.vm.closed).toBe(false)
       vi.runAllTimers()
       expect(wrapper.vm.visible).toBe(false)
-      // expect(wrapper.vm.timer).toBe(null)
-      // expect(wrapper.vm.closed).toBe(true)
       vi.useRealTimers()
     })
 
