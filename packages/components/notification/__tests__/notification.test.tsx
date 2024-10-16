@@ -313,6 +313,11 @@ describe('Notification.vue', () => {
         expect(findProgressBar(wrapper).exists()).toBe(expected)
       })
     })
+
+    describe.todo('background-color', () => {
+      test.todo('when type provided')
+      test.todo('no type then currentColor')
+    })
   })
 
   describe('actions', () => {

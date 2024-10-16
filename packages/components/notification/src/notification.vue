@@ -44,11 +44,29 @@
           <Close />
         </el-icon>
       </div>
+      <div
+        v-if="showProgressBar && props.duration > 0"
+        :class="ns.e('progressBar')"
+        style="
+          height: 6px;
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          transition: width 0.1s;
+          background-color: brown;
+        "
+        :style="{
+          width: `${(remaining / props.duration) * 100}%`,
+          backgroundColor: props.type
+            ? `var(--el-color-${props.type})`
+            : `currentColor`,
+        }"
+      />
     </div>
   </transition>
 </template>
 <script lang="ts" setup>
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useEventListener, useTimeoutFn } from '@vueuse/core'
 import { CloseComponents, TypeComponentsMap } from '@element-plus/utils'
 import { EVENT_CODE } from '@element-plus/constants'
@@ -72,7 +90,8 @@ const { nextZIndex, currentZIndex } = zIndex
 const { Close } = CloseComponents
 
 const visible = ref(false)
-let timer: (() => void) | undefined = undefined
+const remaining = ref(props.duration)
+let stop: (() => void) | undefined = undefined
 
 const typeClass = computed(() => {
   const type = props.type
@@ -101,14 +120,14 @@ const positionStyle = computed<CSSProperties>(() => {
 
 function startTimer() {
   if (props.duration > 0) {
-    ;({ stop: timer } = useTimeoutFn(() => {
+    ;({ stop } = useTimeoutFn(() => {
       if (visible.value) close()
     }, props.duration))
   }
 }
 
 function clearTimer() {
-  timer?.()
+  stop?.()
 }
 
 function close() {
@@ -128,11 +147,20 @@ function onKeydown({ code }: KeyboardEvent) {
   }
 }
 
-// lifecycle
+let interval: ReturnType<typeof setInterval>
 onMounted(() => {
+  if (props.duration >= 0 && props.showProgressBar) {
+    interval = setInterval(() => {
+      remaining.value -= 100
+    }, 100)
+  }
   startTimer()
   nextZIndex()
   visible.value = true
+})
+
+onUnmounted(() => {
+  clearInterval(interval)
 })
 
 useEventListener(document, 'keydown', onKeydown)
