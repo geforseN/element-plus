@@ -11,6 +11,18 @@ export const notificationTypes = [
 ] as const
 
 export const notificationProps = buildProps({
+  showProgressBar: {
+    type: Boolean,
+    default: false,
+  },
+  actions: {
+    type: definePropType<{ label: string; execute(): void }[]>(Array),
+  },
+  timerControls: {
+    type: String,
+    values: ['pause-resume', 'reset-restart'],
+    default: 'reset-restart',
+  },
   /**
    * @description custom class name for Notification
    */
