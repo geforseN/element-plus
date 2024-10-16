@@ -30,6 +30,16 @@
             <p v-else v-html="message" />
           </slot>
         </div>
+        <div v-if="actions?.length" :class="ns.e('actions')">
+          <el-button
+            v-for="action in actions"
+            :key="action.label"
+            size="small"
+            @click="action.execute"
+          >
+            {{ action.label }}
+          </el-button>
+        </div>
         <el-icon v-if="showClose" :class="ns.e('closeBtn')" @click.stop="close">
           <Close />
         </el-icon>
@@ -43,6 +53,7 @@ import { useEventListener, useTimeoutFn } from '@vueuse/core'
 import { CloseComponents, TypeComponentsMap } from '@element-plus/utils'
 import { EVENT_CODE } from '@element-plus/constants'
 import { ElIcon } from '@element-plus/components/icon'
+import { ElButton } from '@element-plus/components/button'
 import { useGlobalComponentSettings } from '@element-plus/components/config-provider'
 import { notificationEmits, notificationProps } from './notification'
 
