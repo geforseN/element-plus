@@ -17,25 +17,10 @@ export type NotificationAction = {
 
 export const notificationProps = buildProps({
   /**
-   * @description whether to show a progress bar
-   */
-  showProgressBar: {
-    type: Boolean,
-    default: false,
-  },
-  /**
    * @description buttons for notification interaction
    */
   actions: {
     type: definePropType<NotificationAction[]>(Array),
-  },
-  /**
-   * @description behavior of timer upon hover over notification
-   */
-  timerControls: {
-    type: String,
-    values: ['pause-resume', 'reset-restart'],
-    default: 'reset-restart',
   },
   /**
    * @description custom class name for Notification
@@ -110,6 +95,21 @@ export const notificationProps = buildProps({
   showClose: {
     type: Boolean,
     default: true,
+  },
+  /**
+   * @description whether to show a progress bar
+   */
+  showProgressBar: {
+    type: Boolean,
+    default: false,
+  },
+  /**
+   * @description behavior of timer upon hover over notification
+   */
+  timerControls: {
+    type: String,
+    values: ['pause-resume', 'reset-restart'],
+    default: 'reset-restart',
   },
   /**
    * @description title
