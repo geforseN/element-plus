@@ -1,5 +1,5 @@
 import { computed, ref, watch } from 'vue'
-import { resolveUnref as toValue, useIntervalFn } from '@vueuse/core'
+import { clamp, resolveUnref as toValue, useIntervalFn } from '@vueuse/core'
 import { debugWarn } from '@element-plus/utils'
 import { notificationTypes } from './notification'
 
@@ -38,28 +38,24 @@ export function useTimer(
 
   const isValidDuration = computed(() => toValue(duration) > 0)
 
-  const MAGIC_NUMBER = 10
-  const interval = useIntervalFn(
-    () => {
-      remaining.value -= MAGIC_NUMBER
-      if (remaining.value <= 0) {
-        interval.pause()
-        onEnd()
-      }
-    },
-    MAGIC_NUMBER,
-    { immediate: false }
-  )
-
-  const initialize = () => {
-    if (!isValidDuration.value) {
-      return
-    }
-    interval.resume()
-  }
+  let interval: ReturnType<typeof useIntervalFn>
 
   return {
-    initialize,
+    initialize() {
+      if (!isValidDuration.value) {
+        return
+      }
+      const MAGIC_NUMBER = computed(() =>
+        clamp(toValue(duration) / 16.7, 10, 100)
+      )
+      interval = useIntervalFn(() => {
+        remaining.value -= MAGIC_NUMBER.value
+        if (remaining.value <= 0) {
+          interval.pause()
+          onEnd()
+        }
+      }, MAGIC_NUMBER)
+    },
     remaining,
     pauseOrReset() {
       if (!isValidDuration.value) {
