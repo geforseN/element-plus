@@ -10,7 +10,10 @@ export const notificationTypes = [
   'error',
 ] as const
 
-export type NotificationAction = { label: string; execute(): void }
+export type NotificationAction = {
+  label: string
+  execute(closeNotification: () => void): void
+}
 
 export const notificationProps = buildProps({
   showProgressBar: {

@@ -344,7 +344,7 @@ describe('Notification.vue', () => {
           {
             actions: [
               { execute: () => undefined },
-            ] as NotificationProps['actions'],
+            ] as unknown as NotificationProps['actions'],
           },
         ],
       },
@@ -390,6 +390,26 @@ describe('Notification.vue', () => {
         await wrapper.find('.el-button').trigger('click')
         expect(execute).toHaveBeenCalled()
         expect(missedExecute).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('`execute` has first argument as function', () => {
+      test('on action button click will close the notification', async () => {
+        const wrapper = _mount({
+          props: {
+            actions: [
+              {
+                execute(closeNotification) {
+                  closeNotification()
+                },
+                label: 'Test',
+              },
+            ],
+          },
+        })
+        expect(wrapper.vm.visible).toBe(true)
+        await wrapper.find('.el-button').trigger('click')
+        expect(wrapper.vm.visible).toBe(false)
       })
     })
   })
