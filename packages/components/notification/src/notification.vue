@@ -47,14 +47,6 @@
       <div
         v-if="showProgressBar && props.duration > 0"
         :class="ns.e('progressBar')"
-        style="
-          height: 6px;
-          position: absolute;
-          bottom: 0;
-          left: 0;
-          transition: width 0.1s;
-          background-color: brown;
-        "
         :style="{
           width: `${(remaining / props.duration) * 100}%`,
           backgroundColor: props.type

@@ -57,6 +57,14 @@
     }
   }
 
+  @include e(progressBar) {
+    height: 6px;
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    transition: width 0.1s;
+  }
+
   & .#{$namespace}-notification__icon {
     height: getCssVar('notification-icon-size');
     width: getCssVar('notification-icon-size');
