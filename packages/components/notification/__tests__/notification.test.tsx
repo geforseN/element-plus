@@ -201,6 +201,8 @@ describe('Notification.vue', () => {
         await wrapper.find('[role=alert]').trigger('mouseleave')
         vi.advanceTimersByTime(50)
         expect(wrapper.vm.visible).toBe(isVisibleAtEnd)
+        vi.runAllTimers()
+        expect(wrapper.vm.visible).toBe(false)
         vi.useRealTimers()
       }
     )
@@ -336,14 +338,13 @@ describe('Notification.vue', () => {
           { actions: undefined },
           { actions: [] },
           // some property is not provided
-          { actions: [{ label: 'test' }] } as any,
-          { actions: [{ execute: () => undefined }] } as any,
-          // labels are same
+          {
+            actions: [{ label: 'test' }] as NotificationProps['actions'],
+          },
           {
             actions: [
-              { label: 'test', execute: () => undefined },
-              { label: 'test', execute: () => undefined },
-            ],
+              { execute: () => undefined },
+            ] as NotificationProps['actions'],
           },
         ],
       },
@@ -368,6 +369,28 @@ describe('Notification.vue', () => {
       })
     })
 
-    test.todo('spy action execute')
+    describe('with same label', () => {
+      const execute = vi.fn()
+      const missedExecute = vi.fn()
+
+      const wrapper = _mount({
+        props: {
+          actions: [
+            { label: 'test', execute },
+            { label: 'test', execute: missedExecute },
+          ],
+        },
+      })
+
+      test('will be one action button', () => {
+        expect(findActions(wrapper).findAll('.el-button').length).toBe(1)
+      })
+
+      test('on click will execute first action', async () => {
+        await wrapper.find('.el-button').trigger('click')
+        expect(execute).toHaveBeenCalled()
+        expect(missedExecute).not.toHaveBeenCalled()
+      })
+    })
   })
 })

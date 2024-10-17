@@ -10,8 +10,8 @@
       :class="[ns.b(), customClass, horizontalClass]"
       :style="positionStyle"
       role="alert"
-      @mouseenter="clearTimer"
-      @mouseleave="startTimer"
+      @mouseenter="pauseOrResetTimer"
+      @mouseleave="resumeOrRestartTimer"
       @click="onClick"
     >
       <el-icon v-if="iconComponent" :class="[ns.e('icon'), typeClass]">
@@ -30,9 +30,9 @@
             <p v-else v-html="message" />
           </slot>
         </div>
-        <div v-if="actions?.length" :class="ns.e('actions')">
+        <div v-if="mustShowActions" :class="ns.e('actions')">
           <el-button
-            v-for="action in actions"
+            v-for="action of actions"
             :key="action.label"
             size="small"
             @click="action.execute"
@@ -45,27 +45,28 @@
         </el-icon>
       </div>
       <div
-        v-if="showProgressBar && props.duration > 0"
+        v-if="mustShowProgressBar"
         :class="ns.e('progressBar')"
-        :style="{
-          width: `${(remaining / props.duration) * 100}%`,
-          backgroundColor: props.type
-            ? `var(--el-color-${props.type})`
-            : `currentColor`,
-        }"
+        :style="progressBarStyle"
       />
     </div>
   </transition>
 </template>
 <script lang="ts" setup>
-import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { useEventListener, useTimeoutFn } from '@vueuse/core'
+import { computed, onMounted } from 'vue'
+import { useEventListener } from '@vueuse/core'
 import { CloseComponents, TypeComponentsMap } from '@element-plus/utils'
 import { EVENT_CODE } from '@element-plus/constants'
 import { ElIcon } from '@element-plus/components/icon'
 import { ElButton } from '@element-plus/components/button'
 import { useGlobalComponentSettings } from '@element-plus/components/config-provider'
 import { notificationEmits, notificationProps } from './notification'
+import {
+  useActions,
+  useProgressBar,
+  useTimer,
+  useVisibility,
+} from './composables'
 
 import type { CSSProperties } from 'vue'
 
@@ -76,14 +77,37 @@ defineOptions({
 const props = defineProps(notificationProps)
 defineEmits(notificationEmits)
 
+const { visible, show: open, hide: close } = useVisibility(false)
+
+const {
+  remaining: remainingTimerDuration,
+  initialize: initializeTimer,
+  pauseOrReset: pauseOrResetTimer,
+  resumeOrRestart: resumeOrRestartTimer,
+} = useTimer(
+  () => props.duration,
+  () => props.timerControls,
+  () => {
+    if (visible.value) {
+      close()
+    }
+  }
+)
+
+const { mustShow: mustShowProgressBar, style: progressBarStyle } =
+  useProgressBar(
+    () => props.showProgressBar,
+    () => props.duration,
+    remainingTimerDuration,
+    () => props.type
+  )
+
+const { actions, mustShow: mustShowActions } = useActions(() => props.actions)
+
 const { ns, zIndex } = useGlobalComponentSettings('notification')
 const { nextZIndex, currentZIndex } = zIndex
 
 const { Close } = CloseComponents
-
-const visible = ref(false)
-const remaining = ref(props.duration)
-let stop: (() => void) | undefined = undefined
 
 const typeClass = computed(() => {
   const type = props.type
@@ -110,52 +134,21 @@ const positionStyle = computed<CSSProperties>(() => {
   }
 })
 
-function startTimer() {
-  if (props.duration > 0) {
-    ;({ stop } = useTimeoutFn(() => {
-      if (visible.value) close()
-    }, props.duration))
-  }
-}
-
-function clearTimer() {
-  stop?.()
-}
-
-function close() {
-  visible.value = false
-}
-
-function onKeydown({ code }: KeyboardEvent) {
+useEventListener(document, 'keydown', ({ code }: KeyboardEvent) => {
   if (code === EVENT_CODE.delete || code === EVENT_CODE.backspace) {
-    clearTimer() // press delete/backspace clear timer
+    pauseOrResetTimer()
   } else if (code === EVENT_CODE.esc) {
-    // press esc to close the notification
-    if (visible.value) {
-      close()
-    }
+    close()
   } else {
-    startTimer() // resume timer
+    resumeOrRestartTimer()
   }
-}
+})
 
-let interval: ReturnType<typeof setInterval>
 onMounted(() => {
-  if (props.duration >= 0 && props.showProgressBar) {
-    interval = setInterval(() => {
-      remaining.value -= 100
-    }, 100)
-  }
-  startTimer()
+  initializeTimer()
   nextZIndex()
-  visible.value = true
+  open()
 })
-
-onUnmounted(() => {
-  clearInterval(interval)
-})
-
-useEventListener(document, 'keydown', onKeydown)
 
 defineExpose({
   visible,

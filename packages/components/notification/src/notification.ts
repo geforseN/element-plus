@@ -10,13 +10,15 @@ export const notificationTypes = [
   'error',
 ] as const
 
+export type NotificationAction = { label: string; execute(): void }
+
 export const notificationProps = buildProps({
   showProgressBar: {
     type: Boolean,
     default: false,
   },
   actions: {
-    type: definePropType<{ label: string; execute(): void }[]>(Array),
+    type: definePropType<NotificationAction[]>(Array),
   },
   timerControls: {
     type: String,
