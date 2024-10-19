@@ -79,11 +79,17 @@ defineEmits(notificationEmits)
 
 const { visible, show: open, hide: close } = useVisibility(false)
 
+const onClose = () => {
+  cleanupTimer()
+  props.onClose?.()
+}
+
 const {
   remaining: remainingTimerDuration,
   initialize: initializeTimer,
   pauseOrReset: pauseOrResetTimer,
   resumeOrRestart: resumeOrRestartTimer,
+  cleanup: cleanupTimer,
 } = useTimer(
   () => props.duration,
   () => props.timerControls,

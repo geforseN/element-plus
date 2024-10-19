@@ -72,6 +72,11 @@ export function useTimer(
       }
       interval.resume()
     },
+    cleanup() {
+      if (interval) {
+        interval.pause()
+      }
+    },
   }
 }
 
