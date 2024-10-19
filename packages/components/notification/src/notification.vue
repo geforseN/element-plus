@@ -35,7 +35,7 @@
             v-for="action of actions"
             :key="action.label"
             size="small"
-            @click="action.execute(close)"
+            @click="action.execute"
           >
             {{ action.label }}
           </el-button>
@@ -102,7 +102,10 @@ const { mustShow: mustShowProgressBar, style: progressBarStyle } =
     () => props.type
   )
 
-const { actions, mustShow: mustShowActions } = useActions(() => props.actions)
+const { actions, mustShow: mustShowActions } = useActions(
+  () => props.actions,
+  close
+)
 
 const { ns, zIndex } = useGlobalComponentSettings('notification')
 const { nextZIndex, currentZIndex } = zIndex

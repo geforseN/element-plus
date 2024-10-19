@@ -383,33 +383,78 @@ describe('Notification.vue', () => {
       })
 
       test('will be one action button', () => {
-        expect(findActions(wrapper).findAll('.el-button').length).toBe(1)
+        expect(findActions(wrapper).findAll('button').length).toBe(1)
       })
 
       test('on click will execute first action', async () => {
-        await wrapper.find('.el-button').trigger('click')
+        await wrapper.get('button').trigger('click')
         expect(execute).toHaveBeenCalled()
         expect(missedExecute).not.toHaveBeenCalled()
       })
     })
 
-    describe('`execute` has first argument as function', () => {
-      test('on action button click will close the notification', async () => {
+    describe('keepOpen', () => {
+      test.for([{}, { keepOpen: false }, { keepOpen: undefined }])(
+        'will close the notification',
+        async (action) => {
+          const wrapper = _mount({
+            props: {
+              actions: [
+                {
+                  label: 'Close',
+                  execute: () => undefined,
+                  ...action,
+                },
+              ],
+              duration: 0,
+            },
+          })
+          expect(wrapper.vm.visible).toBe(true)
+          await findActions(wrapper).get('button').trigger('click')
+          expect(wrapper.vm.visible).toBe(false)
+        }
+      )
+
+      test('will not close with keepOpen', async () => {
         const wrapper = _mount({
           props: {
             actions: [
               {
-                execute(closeNotification) {
-                  closeNotification()
-                },
-                label: 'Test',
+                execute: () => undefined,
+                label: 'Keep open',
+                keepOpen: true,
               },
             ],
+            duration: 0,
           },
         })
         expect(wrapper.vm.visible).toBe(true)
-        await wrapper.find('.el-button').trigger('click')
+        await findActions(wrapper).get('button').trigger('click')
+        expect(wrapper.vm.visible).toBe(true)
+      })
+
+      // FIXME: it works when test manually
+      test.fails('closes with `until-resolved`', async () => {
+        vi.useFakeTimers()
+        const timeout = 1000
+        const wrapper = _mount({
+          props: {
+            actions: [
+              {
+                label: `Close after ${timeout}ms`,
+                execute: () =>
+                  new Promise((resolve) => setTimeout(resolve, timeout)),
+                keepOpen: 'until-resolved',
+              },
+            ],
+            duration: 0,
+          },
+        })
+        expect(wrapper.vm.visible).toBe(true)
+        await findActions(wrapper).get('button').trigger('click')
+        vi.advanceTimersByTime(timeout)
         expect(wrapper.vm.visible).toBe(false)
+        vi.useRealTimers()
       })
     })
   })

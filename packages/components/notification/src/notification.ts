@@ -12,7 +12,12 @@ export const notificationTypes = [
 
 export type NotificationAction = {
   label: string
-  execute(closeNotification: () => void): void
+  execute(): void | Promise<void>
+  /**
+   * @description Determines whether to keep the notification open after calling `execute`. Will close the notification by default.
+   * If set to `'until-resolved'`, it waits for the promise from `execute` to resolve before closing the notification.
+   */
+  keepOpen?: boolean | 'until-resolved'
 }
 
 export const notificationProps = buildProps({

@@ -99,8 +99,11 @@ export function useProgressBar(
   }
 }
 
+type IntervalNotificationAction = Pick<NotificationAction, 'execute' | 'label'>
+
 export function useActions(
-  actions: MaybeRefOrGetter<NotificationProps['actions']>
+  actions: MaybeRefOrGetter<NotificationProps['actions']>,
+  closeNotification: () => void
 ) {
   const actions_ = computed(() => {
     const actionsValue = toValue(actions)
@@ -115,16 +118,29 @@ export function useActions(
           action.label
       )
       .reduce((actions, action) => {
-        if (!actions[action.label]) {
-          actions[action.label] = action
+        const { label } = action
+        if (!actions[label]) {
+          const { keepOpen } = action
+          const execute = !keepOpen
+            ? () => {
+                action.execute()
+                closeNotification()
+              }
+            : keepOpen === 'until-resolved'
+            ? async () => {
+                await action.execute()
+                closeNotification()
+              }
+            : action.execute
+          actions[label] = { label, execute }
         } else {
           debugWarn(
             'ElNotification',
-            `Duplicated action label: ${action.label}. Please change action label.`
+            `Duplicated action label: ${label}. Please change action label.`
           )
         }
         return actions
-      }, {} as Record<string, NotificationAction>)
+      }, {} as Record<string, IntervalNotificationAction>)
 
     return Object.values(filteredActions)
   })
