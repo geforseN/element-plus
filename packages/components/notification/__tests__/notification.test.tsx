@@ -184,11 +184,11 @@ describe('Notification.vue', () => {
     })
 
     test.for([
-      ['pause-resume', false],
-      ['reset-restart', true],
+      { timerControls: 'pause-resume', isVisibleAtEnd: false },
+      { timerControls: 'reset-restart', isVisibleAtEnd: true },
     ] as const)(
       'handle timerControls=%s',
-      async ([timerControls, isVisibleAtEnd]) => {
+      async ({ timerControls, isVisibleAtEnd }) => {
         vi.useFakeTimers()
         const duration = 100
         const wrapper = _mount({
@@ -319,7 +319,7 @@ describe('Notification.vue', () => {
 
     describe('background-color', () => {
       test.for(notificationTypes)(
-        'it has element class and type class when type prop is %s',
+        'has element class and type class when type prop is %s',
         (type) => {
           const wrapper = _mount({
             props: {
@@ -335,7 +335,7 @@ describe('Notification.vue', () => {
       )
 
       test.for([{}, { type: '' }, { type: undefined }] as const)(
-        'it has only element class when props contains %o',
+        'has only element class when props contains %o',
         (props) => {
           const wrapper = _mount({
             props: {
@@ -356,46 +356,40 @@ describe('Notification.vue', () => {
     const findActions = (wrapper: VueWrapper<NotificationInstance>) =>
       wrapper.find('.el-notification__actions')
 
-    describe.each<{
-      mustRenderActions: boolean
-      name: string
-      cases: Partial<NotificationProps>[]
-    }>([
-      {
-        mustRenderActions: false,
-        name: 'will not render',
-        cases: [
-          { actions: undefined },
-          { actions: [] },
-          // some property is not provided
-          {
-            actions: [{ label: 'test' }] as NotificationProps['actions'],
-          },
-          {
-            actions: [
-              { execute: () => undefined },
-            ] as unknown as NotificationProps['actions'],
-          },
-        ],
-      },
-      {
-        mustRenderActions: true,
-        name: 'will render',
-        cases: [
-          {
-            actions: [
-              {
-                label: 'test',
-                execute: () => undefined,
-              },
-            ],
-          },
-        ],
-      },
-    ])('$name', ({ cases, mustRenderActions: expected }) => {
-      test.for(cases)('when props: %o', (props) => {
+    const validAction = { label: 'test', execute: () => undefined }
+
+    test.for([{}, { actions: undefined }, { actions: [] }])(
+      'does not render when props: %o',
+      (props) => {
         const wrapper = _mount({ props })
-        expect(findActions(wrapper).exists()).toBe(expected)
+        expect(findActions(wrapper).exists()).toBe(false)
+      }
+    )
+
+    test.for([{ actions: [validAction] }])(
+      'does render when props: %o',
+      (props) => {
+        const wrapper = _mount({ props })
+        expect(findActions(wrapper).exists()).toBe(true)
+      }
+    )
+
+    describe('required action properties not passed', () => {
+      const invalidActions = [
+        { label: 'test' },
+        { execute: () => undefined },
+      ] as unknown as NonNullable<NotificationProps['actions']>
+
+      test('does not render invalid actions: %o', () => {
+        const wrapper = _mount({ props: { actions: invalidActions } })
+        expect(findActions(wrapper).exists()).toBe(false)
+      })
+
+      test('will render only valid action', () => {
+        const wrapper = _mount({
+          props: { actions: invalidActions.concat(validAction) },
+        })
+        expect(findActions(wrapper).findAll('button').length).toBe(1)
       })
     })
 
