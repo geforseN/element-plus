@@ -10,8 +10,8 @@
       :class="[ns.b(), customClass, horizontalClass]"
       :style="positionStyle"
       role="alert"
-      @mouseenter="pauseOrResetTimer"
-      @mouseleave="resumeOrRestartTimer"
+      @mouseenter="timer.pauseOrReset"
+      @mouseleave="timer.resumeOrRestart"
       @click="onClick"
     >
       <el-icon v-if="iconComponent" :class="[ns.e('icon'), typeClass]">
@@ -80,17 +80,11 @@ defineEmits(notificationEmits)
 const { visible, show: open, hide: close } = useVisibility(false)
 
 const onClose = () => {
-  cleanupTimer()
+  timer.cleanup()
   props.onClose?.()
 }
 
-const {
-  remaining: remainingTimerDuration,
-  initialize: initializeTimer,
-  pauseOrReset: pauseOrResetTimer,
-  resumeOrRestart: resumeOrRestartTimer,
-  cleanup: cleanupTimer,
-} = useTimer(
+const timer = useTimer(
   () => props.duration,
   () => props.timerControls,
   () => {
@@ -104,7 +98,7 @@ const { mustShow: mustShowProgressBar, style: progressBarStyle } =
   useProgressBar(
     () => props.showProgressBar,
     () => props.duration,
-    remainingTimerDuration,
+    timer.remaining,
     () => props.type
   )
 
@@ -145,16 +139,16 @@ const positionStyle = computed<CSSProperties>(() => {
 
 useEventListener(document, 'keydown', ({ code }: KeyboardEvent) => {
   if (code === EVENT_CODE.delete || code === EVENT_CODE.backspace) {
-    pauseOrResetTimer()
+    timer.pauseOrReset()
   } else if (code === EVENT_CODE.esc) {
     close()
   } else {
-    resumeOrRestartTimer()
+    timer.resumeOrRestart()
   }
 })
 
 onMounted(() => {
-  initializeTimer()
+  timer.initialize()
   nextZIndex()
   open()
 })
