@@ -317,9 +317,38 @@ describe('Notification.vue', () => {
       })
     })
 
-    describe.todo('background-color', () => {
-      test.todo('when type provided')
-      test.todo('no type then currentColor')
+    describe('background-color', () => {
+      test.for(notificationTypes)(
+        'it has element class and type class when type prop is %s',
+        (type) => {
+          const wrapper = _mount({
+            props: {
+              type,
+              showProgressBar: true,
+            },
+          })
+          expect(findProgressBar(wrapper).classes()).toEqual([
+            'el-notification__progressBar',
+            `el-notification--${type}`,
+          ])
+        }
+      )
+
+      test.for([{}, { type: '' }, { type: undefined }] as const)(
+        'it has only element class when props contains %o',
+        (props) => {
+          const wrapper = _mount({
+            props: {
+              ...props,
+              showProgressBar: true,
+            },
+          })
+
+          expect(findProgressBar(wrapper).classes()).toEqual([
+            'el-notification__progressBar',
+          ])
+        }
+      )
     })
   })
 

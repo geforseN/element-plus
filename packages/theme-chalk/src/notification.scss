@@ -7,6 +7,8 @@
 }
 
 @include b(notification) {
+  $types: (success, info, warning, error);
+
   display: flex;
   width: getCssVar('notification-width');
   padding: getCssVar('notification-padding');
@@ -63,6 +65,13 @@
     bottom: 0;
     left: 0;
     transition: width 0.1s;
+    background-color: currentColor;
+
+    @each $type in $types {
+      &.#{$namespace}-notification--#{$type} {
+        background-color: getCssVar('color', $type);
+      }
+    }
   }
 
   @include e(actions) {
@@ -94,7 +103,7 @@
     }
   }
 
-  @each $type in (success, info, warning, error) {
+  @each $type in $types {
     & .#{$namespace}-notification--#{$type} {
       @include css-var-from-global(
         ('notification', 'icon-color'),

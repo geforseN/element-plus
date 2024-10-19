@@ -85,22 +85,13 @@ export function useTimer(
 export function useProgressBar(
   showProgressBar: MaybeRefOrGetter<NotificationProps['showProgressBar']>,
   duration: MaybeRefOrGetter<NotificationProps['duration']>,
-  remaining: MaybeRefOrGetter<number>,
-  type: MaybeRefOrGetter<NotificationProps['type']>
+  remaining: MaybeRefOrGetter<number>
 ) {
-  const backgroundColor = computed(() => {
-    const typeValue = toValue(type)
-    if (!typeValue || !notificationTypes.includes(typeValue))
-      return 'currentColor'
-    return `var(--el-color-${typeValue})`
-  })
-
   return {
     mustShow: computed(() => toValue(showProgressBar) && toValue(duration) > 0),
     style: computed<CSSProperties>(() => {
       return {
         width: `${(toValue(remaining) / toValue(duration)) * 100}%`,
-        backgroundColor: backgroundColor.value,
       }
     }),
   }

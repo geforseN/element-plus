@@ -46,7 +46,7 @@
       </div>
       <div
         v-if="mustShowProgressBar"
-        :class="ns.e('progressBar')"
+        :class="[ns.e('progressBar'), typeClass]"
         :style="progressBarStyle"
       />
     </div>
@@ -98,8 +98,7 @@ const { mustShow: mustShowProgressBar, style: progressBarStyle } =
   useProgressBar(
     () => props.showProgressBar,
     () => props.duration,
-    timer.remaining,
-    () => props.type
+    timer.remaining
   )
 
 const { actions, mustShow: mustShowActions } = useActions(
