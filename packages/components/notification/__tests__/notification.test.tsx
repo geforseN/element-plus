@@ -131,7 +131,7 @@ describe('Notification.vue', () => {
   })
 
   describe('event handlers', () => {
-    test('it should be able to close the notification by clicking close button', async () => {
+    test('should be able to close the notification by clicking close button', async () => {
       const onClose = vi.fn()
       const wrapper = _mount({
         slots: {
