@@ -2,6 +2,7 @@ import { buildProps, definePropType, iconPropType } from '@element-plus/utils'
 
 import type { ExtractPropTypes, VNode } from 'vue'
 import type Notification from './notification.vue'
+import type { ButtonProps } from '@element-plus/element-plus'
 
 export const notificationTypes = [
   'success',
@@ -18,6 +19,7 @@ export type NotificationAction = {
    * If set to `'until-resolved'`, it waits for the promise from `execute` to resolve before closing the notification.
    */
   keepOpen?: boolean | 'until-resolved'
+  button?: Partial<ButtonProps>
 }
 
 export const notificationProps = buildProps({

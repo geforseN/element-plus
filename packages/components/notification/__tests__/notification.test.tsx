@@ -393,6 +393,102 @@ describe('Notification.vue', () => {
       })
     })
 
+    describe('button', () => {
+      const defaultSizeClass = 'el-button--small'
+
+      const getActionButton = (wrapper: VueWrapper<NotificationInstance>) =>
+        findActions(wrapper).get('button')
+
+      describe('default', () => {
+        const wrapper = _mount({
+          props: {
+            actions: [
+              {
+                execute: () => undefined,
+                label: 'Default',
+              },
+            ],
+          },
+        })
+        const button = getActionButton(wrapper)
+
+        test('does contain default size class', () => {
+          expect(button.classes()).toContain(defaultSizeClass)
+        })
+
+        test('matches snapshot', () => {
+          expect(button.html()).toMatchInlineSnapshot(`
+            "<button ariadisabled="false" type="button" class="el-button el-button--small">
+              <!--v-if--><span class="">Default</span>
+            </button>"
+          `)
+        })
+      })
+
+      describe('custom with default size', () => {
+        const wrapper = _mount({
+          props: {
+            actions: [
+              {
+                execute: () => undefined,
+                button: {
+                  type: 'primary',
+                },
+                label: 'Custom props',
+              },
+            ],
+          },
+        })
+        const button = getActionButton(wrapper)
+
+        test('does contain default size class', () => {
+          expect(button.classes()).toContain(defaultSizeClass)
+        })
+
+        test('matches snapshot', () => {
+          expect(button.html()).toMatchInlineSnapshot(`
+            "<button ariadisabled="false" type="button" class="el-button el-button--primary el-button--small">
+              <!--v-if--><span class="">Custom props</span>
+            </button>"
+          `)
+        })
+      })
+
+      describe('custom with custom size', () => {
+        const wrapper = _mount({
+          props: {
+            actions: [
+              {
+                execute: () => undefined,
+                button: {
+                  type: 'primary',
+                  size: 'default',
+                },
+                label: 'Custom props with custom size',
+              },
+            ],
+          },
+        })
+        const button = getActionButton(wrapper)
+
+        test('does not contain default size class', () => {
+          expect(button.classes()).not.toContain(defaultSizeClass)
+        })
+
+        test('does contain custom size class', () => {
+          expect(button.classes()).toContain('el-button--default')
+        })
+
+        test('matches snapshot', () => {
+          expect(button.html()).toMatchInlineSnapshot(`
+            "<button ariadisabled="false" type="button" class="el-button el-button--primary el-button--default">
+              <!--v-if--><span class="">Custom props with custom size</span>
+            </button>"
+          `)
+        })
+      })
+    })
+
     describe('keepOpen', () => {
       test.for([{}, { keepOpen: false }, { keepOpen: undefined }])(
         'will close the notification',

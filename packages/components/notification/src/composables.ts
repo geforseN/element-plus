@@ -6,6 +6,7 @@ import { notificationTypes } from './notification'
 import type { CSSProperties } from 'vue'
 import type { MaybeRef } from '@vueuse/core'
 import type { NotificationAction, NotificationProps } from './notification'
+import type { ButtonProps } from '@element-plus/element-plus'
 
 type MaybeRefOrGetter<T> = MaybeRef<T> | (() => T)
 
@@ -104,7 +105,9 @@ export function useProgressBar(
   }
 }
 
-type IntervalNotificationAction = Pick<NotificationAction, 'execute' | 'label'>
+type IntervalNotificationAction = Required<
+  Pick<NotificationAction, 'label' | 'execute' | 'button'>
+>
 
 export function useActions(
   actions: MaybeRefOrGetter<NotificationProps['actions']>,
@@ -137,7 +140,8 @@ export function useActions(
                 closeNotification()
               }
             : action.execute
-          actions[label] = { label, execute }
+          const button = <ButtonProps>{ size: 'small', ...action.button }
+          actions[label] = { label, execute, button }
         } else {
           debugWarn(
             'ElNotification',

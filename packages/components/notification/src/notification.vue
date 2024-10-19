@@ -34,7 +34,7 @@
           <el-button
             v-for="action of actions"
             :key="action.label"
-            size="small"
+            v-bind="action.button"
             @click="action.execute"
           >
             {{ action.label }}
