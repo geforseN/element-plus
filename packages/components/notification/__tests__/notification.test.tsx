@@ -182,6 +182,29 @@ describe('Notification.vue', () => {
       vi.useRealTimers()
     })
 
+    test.for([
+      ['pause-resume', false],
+      ['reset-restart', true],
+    ] as const)(
+      'handle timerControls=%s',
+      async ([timerControls, isVisibleAtEnd]) => {
+        vi.useFakeTimers()
+        const duration = 100
+        const wrapper = _mount({
+          props: {
+            duration,
+            timerControls,
+          },
+        })
+        vi.advanceTimersByTime(50)
+        await wrapper.find('[role=alert]').trigger('mouseenter')
+        await wrapper.find('[role=alert]').trigger('mouseleave')
+        vi.advanceTimersByTime(50)
+        expect(wrapper.vm.visible).toBe(isVisibleAtEnd)
+        vi.useRealTimers()
+      }
+    )
+
     test('should not be able to close when duration is set to 0', async () => {
       vi.useFakeTimers()
       const duration = 0
@@ -249,5 +272,97 @@ describe('Notification.vue', () => {
       expect(wrapper.vm.visible).toBe(false)
       vi.useRealTimers()
     })
+  })
+
+  describe('progress bar', () => {
+    const findProgressBar = (wrapper: VueWrapper<NotificationInstance>) =>
+      wrapper.find('.el-notification__progressBar')
+
+    describe.each<{
+      mustRenderProgressBar: boolean
+      name: string
+      cases: Partial<NotificationProps>[]
+    }>([
+      {
+        mustRenderProgressBar: false,
+        name: 'will not render',
+        cases: [
+          ...[-4500, 0, 4500].map((duration) => ({
+            showProgressBar: false,
+            duration,
+          })),
+          ...[-4500, 0].map((duration) => ({
+            showProgressBar: true,
+            duration,
+          })),
+        ],
+      },
+      {
+        mustRenderProgressBar: true,
+        name: 'will render',
+        cases: [
+          {
+            showProgressBar: true,
+            duration: 4500,
+          },
+        ],
+      },
+    ])('$name', ({ cases, mustRenderProgressBar: expected }) => {
+      test.for(cases)('when props: %o', (props) => {
+        const wrapper = _mount({ props })
+        expect(findProgressBar(wrapper).exists()).toBe(expected)
+      })
+    })
+  })
+
+  describe('actions', () => {
+    const findActions = (wrapper: VueWrapper<NotificationInstance>) =>
+      wrapper.find('.el-notification__actions')
+
+    describe.each<{
+      mustRenderActions: boolean
+      name: string
+      cases: Partial<NotificationProps>[]
+    }>([
+      {
+        mustRenderActions: false,
+        name: 'will not render',
+        cases: [
+          { actions: undefined },
+          { actions: [] },
+          // some property is not provided
+          { actions: [{ label: 'test' }] } as any,
+          { actions: [{ execute: () => undefined }] } as any,
+          // labels are same
+          {
+            actions: [
+              { label: 'test', execute: () => undefined },
+              { label: 'test', execute: () => undefined },
+            ],
+          },
+        ],
+      },
+      {
+        mustRenderActions: true,
+        name: 'will render',
+        cases: [
+          {
+            actions: [
+              {
+                label: 'test',
+                execute: () => undefined,
+              },
+            ],
+          },
+        ],
+      },
+    ])('$name', ({ cases, mustRenderActions: expected }) => {
+      test.for(cases)('when props: %o', (props) => {
+        const wrapper = _mount({ props })
+        expect(findActions(wrapper).exists()).toBe(expected)
+      })
+    })
+
+    test.todo('spy action execute')
   })
 })
