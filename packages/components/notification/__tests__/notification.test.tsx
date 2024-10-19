@@ -2,6 +2,7 @@ import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
 import { describe, expect, test, vi } from 'vitest'
 import { TypeComponentsMap } from '@element-plus/utils'
+import * as utils from '@element-plus/utils'
 import { EVENT_CODE } from '@element-plus/constants'
 import { notificationTypes } from '../src/notification'
 import Notification from '../src/notification.vue'
@@ -369,9 +370,46 @@ describe('Notification.vue', () => {
       })
     })
 
+    test('calls debugWarn on duplicate label', () => {
+      const debugWarn = vi
+        .spyOn(utils, 'debugWarn')
+        .mockImplementation(() => undefined)
+
+      _mount({
+        props: {
+          actions: [
+            { label: 'test', execute: () => undefined },
+            { label: 'test', execute: () => undefined },
+          ],
+        },
+      })
+
+      expect(debugWarn).toMatchInlineSnapshot(`
+        [MockFunction debugWarn] {
+          "calls": [
+            [
+              "ElNotification",
+              "Duplicated action label: \`test\`. Please change action label.",
+            ],
+          ],
+          "results": [
+            {
+              "type": "return",
+              "value": undefined,
+            },
+          ],
+        }
+      `)
+      debugWarn.mockRestore()
+    })
+
     describe('with same label', () => {
       const execute = vi.fn()
       const missedExecute = vi.fn()
+      // debugWarn spy removes console warning
+      const debugWarn = vi
+        .spyOn(utils, 'debugWarn')
+        .mockImplementation(() => undefined)
 
       const wrapper = _mount({
         props: {
@@ -391,6 +429,7 @@ describe('Notification.vue', () => {
         expect(execute).toHaveBeenCalled()
         expect(missedExecute).not.toHaveBeenCalled()
       })
+      debugWarn.mockRestore()
     })
 
     describe('button', () => {

@@ -27,7 +27,8 @@ export function useVisibility(initial: boolean) {
 export function useTimer(
   duration: MaybeRefOrGetter<NotificationProps['duration']>,
   timerControls: MaybeRefOrGetter<NotificationProps['timerControls']>,
-  onEnd: () => void
+  onEnd: () => void,
+  showProgressBar?: MaybeRefOrGetter<NotificationProps['showProgressBar']>
 ) {
   const remaining = ref(toValue(duration))
   watch(
@@ -62,7 +63,7 @@ export function useTimer(
       if (!isValidDuration.value) {
         return
       }
-      if (toValue(timerControls) === 'reset-restart') {
+      if (toValue(timerControls) !== 'pause-resume') {
         remaining.value = toValue(duration)
       }
       interval.pause()
@@ -145,7 +146,7 @@ export function useActions(
         } else {
           debugWarn(
             'ElNotification',
-            `Duplicated action label: ${label}. Please change action label.`
+            `Duplicated action label: \`${label}\`. Please change action label.`
           )
         }
         return actions
