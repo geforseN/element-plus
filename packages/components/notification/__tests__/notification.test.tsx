@@ -25,7 +25,21 @@ const _mount = ({
 }: {
   props?: Partial<NotificationProps>
   slots?: Record<'default', () => string | VNode>
-}) => mount(<Notification {...{ onClose, ...props }} v-slots={slots} />)
+}) =>
+  mount(
+    <Notification {...{ onClose, ...props }} v-slots={slots} />
+  ) as NotificationVueWrapper
+
+type NotificationVueWrapper = VueWrapper<InstanceType<typeof Notification>>
+
+const isOpen = (wrapper: NotificationVueWrapper) => wrapper.vm.visible === true
+
+const isClosed = (wrapper: NotificationVueWrapper) =>
+  wrapper.vm.visible === false
+
+const hasVisibility =
+  (visibility: boolean) => (wrapper: NotificationVueWrapper) =>
+    wrapper.vm.visible === visibility
 
 describe('Notification.vue', () => {
   describe('render', () => {
@@ -37,10 +51,10 @@ describe('Notification.vue', () => {
       })
 
       expect(wrapper.text()).toEqual(AXIOM)
-      expect(wrapper.vm.visible).toBe(true)
-      expect(wrapper.vm.iconComponent).toBeUndefined()
-      expect(wrapper.vm.horizontalClass).toBe('right')
-      expect(wrapper.vm.positionStyle).toEqual(
+      expect(wrapper).toSatisfy(isOpen)
+      expect((wrapper.vm as any).iconComponent).toBeUndefined()
+      expect((wrapper.vm as any).horizontalClass).toBe('right')
+      expect((wrapper.vm as any).positionStyle).toEqual(
         expect.objectContaining({
           top: '0px',
         })
@@ -89,7 +103,7 @@ describe('Notification.vue', () => {
       })
       await nextTick()
 
-      expect(wrapper.vm.positionStyle).toEqual(
+      expect((wrapper.vm as any).positionStyle).toEqual(
         expect.objectContaining({
           top: '0px',
           zIndex: 9999,
@@ -159,7 +173,7 @@ describe('Notification.vue', () => {
       vi.runAllTimers()
       vi.useRealTimers()
 
-      expect(wrapper.vm.visible).toBe(false)
+      expect(wrapper).toSatisfy(isClosed)
     })
 
     test('should be able to prevent close itself when hover over', async () => {
@@ -174,12 +188,11 @@ describe('Notification.vue', () => {
 
       await wrapper.find('[role=alert]').trigger('mouseenter')
       vi.advanceTimersByTime(5000)
-      expect(wrapper.vm.visible).toBe(true)
-
+      expect(wrapper).toSatisfy(isOpen)
       await wrapper.find('[role=alert]').trigger('mouseleave')
-      expect(wrapper.vm.visible).toBe(true)
+      expect(wrapper).toSatisfy(isOpen)
       vi.runAllTimers()
-      expect(wrapper.vm.visible).toBe(false)
+      expect(wrapper).toSatisfy(isClosed)
       vi.useRealTimers()
     })
 
@@ -201,9 +214,9 @@ describe('Notification.vue', () => {
         await wrapper.find('[role=alert]').trigger('mouseenter')
         await wrapper.find('[role=alert]').trigger('mouseleave')
         vi.advanceTimersByTime(50)
-        expect(wrapper.vm.visible).toBe(isVisibleAtEnd)
+        expect(wrapper).toSatisfy(hasVisibility(isVisibleAtEnd))
         vi.runAllTimers()
-        expect(wrapper.vm.visible).toBe(false)
+        expect(wrapper).toSatisfy(isClosed)
         vi.useRealTimers()
       }
     )
@@ -218,7 +231,7 @@ describe('Notification.vue', () => {
       })
 
       vi.runAllTimers()
-      expect(wrapper.vm.visible).toBe(true)
+      expect(wrapper).toSatisfy(isOpen)
       vi.useRealTimers()
     })
 
@@ -250,7 +263,7 @@ describe('Notification.vue', () => {
       document.dispatchEvent(event)
 
       vi.runAllTimers()
-      expect(wrapper.vm.visible).toBe(true)
+      expect(wrapper).toSatisfy(isOpen)
       vi.useRealTimers()
     })
 
@@ -272,7 +285,7 @@ describe('Notification.vue', () => {
 
       document.dispatchEvent(event)
       vi.runAllTimers()
-      expect(wrapper.vm.visible).toBe(false)
+      expect(wrapper).toSatisfy(isClosed)
       vi.useRealTimers()
     })
   })
@@ -429,7 +442,7 @@ describe('Notification.vue', () => {
     describe('with same label', () => {
       const execute = vi.fn()
       const missedExecute = vi.fn()
-      // debugWarn spy removes console warning
+      // NOTE: debugWarn spy removes console warning
       const debugWarn = vi
         .spyOn(utils, 'debugWarn')
         .mockImplementation(() => undefined)
@@ -553,7 +566,7 @@ describe('Notification.vue', () => {
 
     describe('keepOpen', () => {
       test.for([{}, { keepOpen: false }, { keepOpen: undefined }])(
-        'will close the notification',
+        'does close the notification with: %o',
         async (action) => {
           const wrapper = _mount({
             props: {
@@ -567,13 +580,13 @@ describe('Notification.vue', () => {
               duration: 0,
             },
           })
-          expect(wrapper.vm.visible).toBe(true)
+          expect(wrapper).toSatisfy(isOpen)
           await findActions(wrapper).get('button').trigger('click')
-          expect(wrapper.vm.visible).toBe(false)
+          expect(wrapper).toSatisfy(isClosed)
         }
       )
 
-      test('will not close with keepOpen', async () => {
+      test('does not close the notification with { keepOpen: true }', async () => {
         const wrapper = _mount({
           props: {
             actions: [
@@ -586,34 +599,38 @@ describe('Notification.vue', () => {
             duration: 0,
           },
         })
-        expect(wrapper.vm.visible).toBe(true)
+
+        expect(wrapper).toSatisfy(isOpen)
         await findActions(wrapper).get('button').trigger('click')
-        expect(wrapper.vm.visible).toBe(true)
+        expect(wrapper).toSatisfy(isOpen)
       })
 
       // FIXME: it works when test manually
-      test.fails('closes with `until-resolved`', async () => {
-        vi.useFakeTimers()
-        const timeout = 1000
-        const wrapper = _mount({
-          props: {
-            actions: [
-              {
-                label: `Close after ${timeout}ms`,
-                execute: () =>
-                  new Promise((resolve) => setTimeout(resolve, timeout)),
-                keepOpen: 'until-resolved',
-              },
-            ],
-            duration: 0,
-          },
-        })
-        expect(wrapper.vm.visible).toBe(true)
-        await findActions(wrapper).get('button').trigger('click')
-        vi.advanceTimersByTime(timeout)
-        expect(wrapper.vm.visible).toBe(false)
-        vi.useRealTimers()
-      })
+      test.fails(
+        'FIXME does close the notification with { keepOpen: "until-resolved" }',
+        async () => {
+          vi.useFakeTimers()
+          const timeout = 1000
+          const wrapper = _mount({
+            props: {
+              actions: [
+                {
+                  label: `Close after ${timeout}ms`,
+                  execute: () =>
+                    new Promise((resolve) => setTimeout(resolve, timeout)),
+                  keepOpen: 'until-resolved',
+                },
+              ],
+              duration: 0,
+            },
+          })
+          expect(wrapper).toSatisfy(isOpen)
+          await findActions(wrapper).get('button').trigger('click')
+          vi.advanceTimersByTime(timeout)
+          expect(wrapper).toSatisfy(isClosed)
+          vi.useRealTimers()
+        }
+      )
     })
   })
 })
