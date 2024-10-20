@@ -1,7 +1,6 @@
 import { computed, ref, watch } from 'vue'
 import { clamp, resolveUnref as toValue, useIntervalFn } from '@vueuse/core'
 import { debugWarn } from '@element-plus/utils'
-import { notificationTypes } from './notification'
 
 import type { CSSProperties } from 'vue'
 import type { MaybeRef } from '@vueuse/core'
@@ -27,8 +26,7 @@ export function useVisibility(initial: boolean) {
 export function useTimer(
   duration: MaybeRefOrGetter<NotificationProps['duration']>,
   timerControls: MaybeRefOrGetter<NotificationProps['timerControls']>,
-  onEnd: () => void,
-  showProgressBar?: MaybeRefOrGetter<NotificationProps['showProgressBar']>
+  onEnd: () => void
 ) {
   const remaining = ref(toValue(duration))
   watch(
@@ -38,46 +36,39 @@ export function useTimer(
     }
   )
 
-  const isValidDuration = computed(() => toValue(duration) > 0)
-
-  let interval: ReturnType<typeof useIntervalFn>
+  let interval: ReturnType<typeof useIntervalFn> | undefined
 
   return {
+    remaining,
     initialize() {
-      if (!isValidDuration.value) {
-        return
-      }
+      const mustInitTimer = toValue(duration) > 0
+      if (!mustInitTimer) return
       const MAGIC_NUMBER = computed(() =>
         clamp(toValue(duration) / 16.7, 10, 100)
       )
       interval = useIntervalFn(() => {
         remaining.value -= MAGIC_NUMBER.value
         if (remaining.value <= 0) {
-          interval.pause()
+          interval!.pause()
           onEnd()
         }
       }, MAGIC_NUMBER)
     },
-    remaining,
     pauseOrReset() {
-      if (!isValidDuration.value) {
-        return
-      }
-      if (toValue(timerControls) !== 'pause-resume') {
+      if (!interval) return
+      const mustResetRemaining = toValue(timerControls) === 'reset-restart'
+      if (mustResetRemaining) {
         remaining.value = toValue(duration)
       }
       interval.pause()
     },
     resumeOrRestart() {
-      if (!isValidDuration.value) {
-        return
-      }
+      if (!interval) return
       interval.resume()
     },
     cleanup() {
-      if (interval) {
-        interval.pause()
-      }
+      if (!interval) return
+      interval.pause()
     },
   }
 }
