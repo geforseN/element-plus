@@ -3,12 +3,10 @@ import { resolveUnref as toValue, useTimeoutFn } from '@vueuse/core'
 import { debugWarn } from '@element-plus/utils'
 
 import type { Ref } from 'vue'
-import type { MaybeRef } from '@vueuse/core'
+import type { MaybeComputedRef } from '@vueuse/core'
 import type { ButtonProps } from '@element-plus/element-plus'
 import type { Mutable } from '@element-plus/utils'
 import type { NotificationAction, NotificationProps } from './notification'
-
-type MaybeRefOrGetter<T> = MaybeRef<T> | (() => T)
 
 export function useVisibility(initial: boolean) {
   const visible = ref(initial)
@@ -25,8 +23,8 @@ export function useVisibility(initial: boolean) {
 }
 
 export function useTimer(
-  duration: MaybeRefOrGetter<NotificationProps['duration']>,
-  timerControls: MaybeRefOrGetter<NotificationProps['timerControls']>,
+  duration: MaybeComputedRef<NotificationProps['duration']>,
+  timerControls: MaybeComputedRef<NotificationProps['timerControls']>,
   onEnd: () => void,
   progressBarRef: Ref<HTMLElement | undefined>
 ) {
@@ -67,8 +65,8 @@ export function useTimer(
 }
 
 export function useProgressBar(
-  showProgressBar: MaybeRefOrGetter<NotificationProps['showProgressBar']>,
-  duration: MaybeRefOrGetter<NotificationProps['duration']>,
+  showProgressBar: MaybeComputedRef<NotificationProps['showProgressBar']>,
+  duration: MaybeComputedRef<NotificationProps['duration']>,
   templateRef: Ref<HTMLElement | undefined>
 ) {
   let animation: Animation | undefined
@@ -114,7 +112,7 @@ type IntervalNotificationAction = {
 }
 
 export function useActions(
-  actions: MaybeRefOrGetter<NotificationProps['actions']>,
+  actions: MaybeComputedRef<NotificationProps['actions']>,
   closeNotification: () => void
 ) {
   const actions_ = computed(() => {
