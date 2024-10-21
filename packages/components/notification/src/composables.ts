@@ -1,11 +1,12 @@
-import { computed, ref, watch } from 'vue'
+import { computed, reactive, ref, watch } from 'vue'
 import { clamp, resolveUnref as toValue, useIntervalFn } from '@vueuse/core'
 import { debugWarn } from '@element-plus/utils'
 
 import type { CSSProperties } from 'vue'
 import type { MaybeRef } from '@vueuse/core'
-import type { NotificationAction, NotificationProps } from './notification'
+import type { Mutable } from '@element-plus/utils'
 import type { ButtonProps } from '@element-plus/element-plus'
+import type { NotificationAction, NotificationProps } from './notification'
 
 type MaybeRefOrGetter<T> = MaybeRef<T> | (() => T)
 
@@ -88,9 +89,10 @@ export function useProgressBar(
   }
 }
 
-type IntervalNotificationAction = Required<
-  Pick<NotificationAction, 'label' | 'execute' | 'button'>
->
+type IntervalNotificationAction = {
+  label: string
+  button: Partial<ButtonProps> & { onClick: () => Promise<void> }
+}
 
 export function useActions(
   actions: MaybeRefOrGetter<NotificationProps['actions']>,
@@ -101,7 +103,7 @@ export function useActions(
     if (!actionsValue) {
       return []
     }
-    const filteredActions = actionsValue
+    const preparedActions = actionsValue
       .filter(
         (action) =>
           typeof action.execute === 'function' &&
@@ -111,20 +113,8 @@ export function useActions(
       .reduce((actions, action) => {
         const { label } = action
         if (!actions[label]) {
-          const { keepOpen } = action
-          const execute = !keepOpen
-            ? () => {
-                action.execute()
-                closeNotification()
-              }
-            : keepOpen === 'until-resolved'
-            ? async () => {
-                await action.execute()
-                closeNotification()
-              }
-            : action.execute
-          const button = <ButtonProps>{ size: 'small', ...action.button }
-          actions[label] = { label, execute, button }
+          const button = makeActionButton(action, closeNotification)
+          actions[label] = { label, button: button.props }
         } else {
           debugWarn(
             'ElNotification',
@@ -134,11 +124,70 @@ export function useActions(
         return actions
       }, {} as Record<string, IntervalNotificationAction>)
 
-    return Object.values(filteredActions)
+    return Object.values(preparedActions)
   })
 
   return {
     mustShow: computed(() => actions_.value.length > 0),
     actions: actions_,
+  }
+}
+
+function makeActionButton(
+  action: NotificationAction,
+  closeNotification: () => void
+) {
+  const {
+    keepOpen = false,
+    disableWhilePending = keepOpen === 'until-resolved',
+    execute,
+  } = action
+
+  const props = <IntervalNotificationAction['button']>{
+    size: 'small',
+    ...action.button,
+    async onClick() {
+      try {
+        button.disableIfNeeded()
+        const maybePromise = execute()
+        if (keepOpen === 'until-resolved') {
+          await maybePromise
+        }
+      } finally {
+        button.enableIfNeeded()
+        if (keepOpen !== true) {
+          closeNotification()
+        }
+      }
+    },
+  }
+
+  const button = disableWhilePending
+    ? new ReactiveActionButton(props)
+    : new NoopActionButton(props)
+  return button
+}
+
+class NoopActionButton {
+  constructor(public props: Mutable<IntervalNotificationAction['button']>) {}
+  /* eslint-disable @typescript-eslint/no-empty-function */
+  disableIfNeeded() {}
+  enableIfNeeded() {}
+  /* eslint-enable @typescript-eslint/no-empty-function */
+}
+
+class ReactiveActionButton {
+  props: Mutable<IntervalNotificationAction['button']>
+
+  constructor(props: Mutable<IntervalNotificationAction['button']>) {
+    this.props = reactive(props)
+  }
+
+  disableIfNeeded() {
+    this.props.disabled = true
+  }
+
+  enableIfNeeded() {
+    this.props.disabled = false
   }
 }

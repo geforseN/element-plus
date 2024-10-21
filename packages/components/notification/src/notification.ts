@@ -15,10 +15,17 @@ export type NotificationAction = {
   label: string
   execute(): void | Promise<void>
   /**
-   * @description Determines whether to keep the notification open after calling `execute`. Will close the notification by default.
-   * If set to `'until-resolved'`, it waits for the promise from `execute` to resolve before closing the notification.
+   * @description Determines whether to keep the notification open after calling `execute`.
+   * Will close the notification by default.
+   * If set to `'until-resolved'`, it waits for the promise from `execute` to resolve and then closes the notification.
+   * @default false
    */
   keepOpen?: boolean | 'until-resolved'
+  /**
+   * @description Disables the action button while the promise from `execute` is pending.
+   * @default keepOpen === 'until-resolved'
+   */
+  disableWhilePending?: boolean
   button?: Partial<ButtonProps>
 }
 
