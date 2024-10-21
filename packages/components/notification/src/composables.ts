@@ -1,11 +1,11 @@
-import { computed, reactive, ref, watch } from 'vue'
-import { clamp, resolveUnref as toValue, useIntervalFn } from '@vueuse/core'
+import { computed, reactive, ref } from 'vue'
+import { resolveUnref as toValue, useTimeoutFn } from '@vueuse/core'
 import { debugWarn } from '@element-plus/utils'
 
-import type { CSSProperties } from 'vue'
+import type { Ref } from 'vue'
 import type { MaybeRef } from '@vueuse/core'
-import type { Mutable } from '@element-plus/utils'
 import type { ButtonProps } from '@element-plus/element-plus'
+import type { Mutable } from '@element-plus/utils'
 import type { NotificationAction, NotificationProps } from './notification'
 
 type MaybeRefOrGetter<T> = MaybeRef<T> | (() => T)
@@ -27,49 +27,41 @@ export function useVisibility(initial: boolean) {
 export function useTimer(
   duration: MaybeRefOrGetter<NotificationProps['duration']>,
   timerControls: MaybeRefOrGetter<NotificationProps['timerControls']>,
-  onEnd: () => void
+  onEnd: () => void,
+  progressBarRef: Ref<HTMLElement | undefined>
 ) {
-  const remaining = ref(toValue(duration))
-  watch(
-    () => toValue(duration),
-    (duration) => {
-      remaining.value = duration
-    }
-  )
-
-  let interval: ReturnType<typeof useIntervalFn> | undefined
+  let timeout: ReturnType<typeof useTimeoutFn>
+  const remaining = ref(0)
 
   return {
-    remaining,
     initialize() {
       const mustInitTimer = toValue(duration) > 0
       if (!mustInitTimer) return
-      const MAGIC_NUMBER = computed(() =>
-        clamp(toValue(duration) / 16.7, 10, 100)
-      )
-      interval = useIntervalFn(() => {
-        remaining.value -= MAGIC_NUMBER.value
-        if (remaining.value <= 0) {
-          interval!.pause()
-          onEnd()
-        }
-      }, MAGIC_NUMBER)
+      remaining.value = toValue(duration)
+      timeout = useTimeoutFn(onEnd, remaining)
     },
-    pauseOrReset() {
-      if (!interval) return
+    pauseOrReset(animation: Animation) {
+      if (!timeout || !progressBarRef.value) return
+      timeout.stop()
       const mustResetRemaining = toValue(timerControls) === 'reset-restart'
       if (mustResetRemaining) {
-        remaining.value = toValue(duration)
+        return animation.reverse()
       }
-      interval.pause()
+      const elapsed = Number(animation.currentTime)
+      if (!elapsed) {
+        throw new Error(
+          `Expected animation.currentTime to be a number, got ${elapsed}`
+        )
+      }
+      remaining.value = toValue(duration) - elapsed
     },
     resumeOrRestart() {
-      if (!interval) return
-      interval.resume()
+      if (!timeout) return
+      timeout.start()
     },
     cleanup() {
-      if (!interval) return
-      interval.pause()
+      if (!timeout) return
+      timeout.stop()
     },
   }
 }
@@ -77,15 +69,42 @@ export function useTimer(
 export function useProgressBar(
   showProgressBar: MaybeRefOrGetter<NotificationProps['showProgressBar']>,
   duration: MaybeRefOrGetter<NotificationProps['duration']>,
-  remaining: MaybeRefOrGetter<number>
+  templateRef: Ref<HTMLElement | undefined>
 ) {
+  let animation: Animation | undefined
+
   return {
     mustShow: computed(() => toValue(showProgressBar) && toValue(duration) > 0),
-    style: computed<CSSProperties>(() => {
-      return {
-        width: `${(toValue(remaining) / toValue(duration)) * 100}%`,
+    getAnimation() {
+      return animation
+    },
+    initialize() {
+      const progressBar = templateRef.value
+      if (!progressBar) return
+      animation = new Animation(
+        new KeyframeEffect(progressBar, [{ width: '100%' }, { width: '0%' }], {
+          duration: toValue(duration),
+          fill: 'forwards',
+        })
+      )
+      animation.play()
+    },
+    pause() {
+      if (animation) {
+        animation.pause()
       }
-    }),
+    },
+    resume() {
+      if (animation) {
+        animation.play()
+      }
+    },
+    cleanup() {
+      if (animation) {
+        animation.cancel()
+        animation = undefined
+      }
+    },
   }
 }
 

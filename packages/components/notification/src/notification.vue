@@ -10,8 +10,8 @@
       :class="[ns.b(), customClass, horizontalClass]"
       :style="positionStyle"
       role="alert"
-      @mouseenter="timer.pauseOrReset"
-      @mouseleave="timer.resumeOrRestart"
+      @mouseenter="pauseOrReset"
+      @mouseleave="resumeOrRestart"
       @click="onClick"
     >
       <el-icon v-if="iconComponent" :class="[ns.e('icon'), typeClass]">
@@ -44,15 +44,15 @@
         </el-icon>
       </div>
       <div
-        v-if="mustShowProgressBar"
+        v-if="progressBar.mustShow.value"
+        ref="progressBarRef"
         :class="[ns.e('progressBar'), typeClass]"
-        :style="progressBarStyle"
       />
     </div>
   </transition>
 </template>
 <script lang="ts" setup>
-import { computed, onMounted } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useEventListener } from '@vueuse/core'
 import { CloseComponents, TypeComponentsMap } from '@element-plus/utils'
 import { EVENT_CODE } from '@element-plus/constants'
@@ -80,9 +80,11 @@ const { visible, show: open, hide: close } = useVisibility(false)
 
 const onClose = () => {
   timer.cleanup()
+  progressBar.cleanup()
   props.onClose?.()
 }
 
+const progressBarRef = ref<HTMLElement>()
 const timer = useTimer(
   () => props.duration,
   () => props.timerControls,
@@ -90,20 +92,34 @@ const timer = useTimer(
     if (visible.value) {
       close()
     }
-  }
+  },
+  progressBarRef
 )
 
-const { mustShow: mustShowProgressBar, style: progressBarStyle } =
-  useProgressBar(
-    () => props.showProgressBar,
-    () => props.duration,
-    timer.remaining
-  )
+const progressBar = useProgressBar(
+  () => props.showProgressBar,
+  () => props.duration,
+  progressBarRef
+)
 
 const { actions, mustShow: mustShowActions } = useActions(
   () => props.actions,
   close
 )
+
+const pauseOrReset = () => {
+  const animation = progressBar.getAnimation()
+  if (!animation) {
+    throw new Error('Animation not found')
+  }
+  timer.pauseOrReset(animation)
+  progressBar.pause()
+}
+
+const resumeOrRestart = () => {
+  timer.resumeOrRestart()
+  progressBar.resume()
+}
 
 const { ns, zIndex } = useGlobalComponentSettings('notification')
 const { nextZIndex, currentZIndex } = zIndex
@@ -137,16 +153,17 @@ const positionStyle = computed<CSSProperties>(() => {
 
 useEventListener(document, 'keydown', ({ code }: KeyboardEvent) => {
   if (code === EVENT_CODE.delete || code === EVENT_CODE.backspace) {
-    timer.pauseOrReset()
+    pauseOrReset()
   } else if (code === EVENT_CODE.esc) {
     close()
   } else {
-    timer.resumeOrRestart()
+    resumeOrRestart()
   }
 })
 
 onMounted(() => {
   timer.initialize()
+  progressBar.initialize()
   nextZIndex()
   open()
 })
