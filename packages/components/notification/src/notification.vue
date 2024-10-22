@@ -45,7 +45,7 @@
           <Close />
         </el-icon>
       </div>
-      <progress
+      <div
         ref="progressBarRef"
         :hidden="progressBar.mustHide.value"
         :class="[ns.e('progressBar'), typeClass]"
