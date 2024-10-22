@@ -131,9 +131,15 @@ function makeAction(
   closeNotification: () => void
 ): IntervalNotificationAction {
   const { keepOpen = false, disableAfterExecute = keepOpen !== true } = action
-  const button = <Mutable<IntervalNotificationAction['button']>>{
-    size: 'small',
-    ...action.button,
+
+  const button: Partial<ButtonProps> = { size: 'small' }
+  if (action.button) {
+    for (const key of Object.keys(action.button).filter(
+      (key) => key.toLowerCase() !== 'onclick'
+    )) {
+      // @ts-expect-error
+      button[key] = action.button[key]
+    }
   }
 
   const disabled = ref(button.disabled ?? false)

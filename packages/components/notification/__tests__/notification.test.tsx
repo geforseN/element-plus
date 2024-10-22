@@ -490,6 +490,32 @@ describe('Notification.vue', () => {
       const getActionButton = (wrapper: VueWrapper<NotificationInstance>) =>
         findActions(wrapper).get('button')
 
+      describe('disallow onclick', () => {
+        test.for(['onClick', 'onclick', 'OnClicK'])(
+          'calls `execute`, not button[%s]',
+          async (name) => {
+            const button = {
+              [name]: vi.fn(),
+            }
+            const execute = vi.fn()
+            const wrapper = _mount({
+              props: {
+                actions: [
+                  {
+                    execute,
+                    label: 'Default',
+                    button,
+                  },
+                ],
+              },
+            })
+            await getActionButton(wrapper).trigger('click')
+            expect(execute).toHaveBeenCalled()
+            expect(button[name]).not.toHaveBeenCalled()
+          }
+        )
+      })
+
       describe('default', () => {
         const wrapper = _mount({
           props: {
