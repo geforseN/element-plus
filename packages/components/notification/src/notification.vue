@@ -77,7 +77,6 @@ const { visible, show: open, hide: close } = useVisibility(false)
 
 const onClose = () => {
   progressBar.cleanup()
-  close()
   props.onClose?.()
 }
 
@@ -87,7 +86,7 @@ const progressBar = useProgressBar(
   () => props.duration,
   () => props.timerControls === 'reset-restart',
   progressBarRef,
-  () => close()
+  close
 )
 
 const { actions: actions_, mustShow: mustShowActions } = useActions(
