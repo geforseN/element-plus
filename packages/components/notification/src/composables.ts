@@ -32,7 +32,6 @@ function createProgressBarAnimation(duration: number, element: HTMLElement) {
 }
 
 export function useProgressBar(
-  showProgressBar: MaybeComputedRef<boolean>,
   duration: MaybeComputedRef<number>,
   mustReset: MaybeComputedRef<boolean>,
   templateRef: Ref<HTMLElement | undefined>,
@@ -45,18 +44,20 @@ export function useProgressBar(
     if (!progressBar) return
     if (animation) {
       animation.cancel()
+      animation.onfinish = null
     }
+    console.log('initialize animation', duration_, progressBar)
     animation = createProgressBarAnimation(duration_, progressBar)
-    useEventListener(animation, 'finish', () => {
+    animation.play()
+    animation.onfinish = () => {
       console.log('finish animation')
       onEnd()
-    })
+    }
   }
 
   watch(() => toValue(duration), initialize)
 
   return {
-    mustShow: computed(() => toValue(showProgressBar) && toValue(duration) > 0),
     initialize,
     pauseOrReset() {
       if (!animation) return

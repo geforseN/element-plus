@@ -46,8 +46,8 @@
         </el-icon>
       </div>
       <div
-        v-if="progressBar.mustShow.value"
         ref="progressBarRef"
+        :hidden="!showProgressBar && !visible"
         :class="[ns.e('progressBar'), typeClass]"
       />
     </div>
@@ -77,12 +77,12 @@ const { visible, show: open, hide: close } = useVisibility(false)
 
 const onClose = () => {
   progressBar.cleanup()
+  close()
   props.onClose?.()
 }
 
 const progressBarRef = ref<HTMLElement>()
 const progressBar = useProgressBar(
-  () => props.showProgressBar,
   () => props.duration,
   () => props.timerControls === 'reset-restart',
   progressBarRef,

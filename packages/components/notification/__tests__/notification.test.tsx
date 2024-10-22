@@ -42,14 +42,14 @@ const hasVisibility =
   (visibility: boolean) => (wrapper: NotificationVueWrapper) =>
     wrapper.vm.visible === visibility
 
+configMocks({
+  afterEach,
+  afterAll,
+})
+
+mockAnimationsApi()
+
 describe('Notification.vue', () => {
-  configMocks({
-    afterEach,
-    afterAll,
-  })
-
-  mockAnimationsApi()
-
   describe('render', () => {
     test('basic render test', () => {
       const wrapper = _mount({

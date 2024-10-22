@@ -1,5 +1,6 @@
 import { nextTick } from 'vue'
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest'
+import { configMocks, mockAnimationsApi } from 'jsdom-testing-mocks'
 import { rAF } from '@element-plus/test-utils/tick'
 import Notification, { closeAll } from '../src/notify'
 import { ElNotification } from '..'
@@ -7,6 +8,13 @@ import { ElNotification } from '..'
 import type { NotificationHandle } from '../src/notification'
 
 const selector = '.el-notification'
+
+configMocks({
+  afterEach,
+  afterAll,
+})
+
+mockAnimationsApi()
 
 describe('Notification on command', () => {
   afterEach(() => {
