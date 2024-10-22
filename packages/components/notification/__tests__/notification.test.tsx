@@ -12,6 +12,7 @@ import type { VNode } from 'vue'
 import type { VueWrapper } from '@vue/test-utils'
 import type { MockInstance } from 'vitest'
 import type {
+  NotificationAction,
   NotificationInstance,
   NotificationProps,
 } from '../src/notification'
@@ -646,6 +647,85 @@ describe('Notification.vue', () => {
           expect(wrapper).toSatisfy(isClosed)
         })
         expect(execute).toHaveResolved()
+      })
+    })
+
+    describe('disableAfterExecute', () => {
+      const MAGIC_NUMBER = 3
+      if (MAGIC_NUMBER <= 1 || !Number.isInteger(MAGIC_NUMBER)) {
+        throw new Error('MAGIC_NUMBER must be an integer greater than 1')
+      }
+
+      const keepOpenValues: NotificationAction['keepOpen'][] = [
+        undefined,
+        false,
+        true,
+        'until-resolved',
+      ] as const
+
+      const actionsWithAllKeepOpenValues = [
+        {},
+        ...keepOpenValues.map((keepOpen) => ({ keepOpen })),
+      ] as const
+
+      const testActionCallsCount = (
+        action: Pick<NotificationAction, 'keepOpen' | 'disableAfterExecute'>,
+        expectedTimes: number
+      ) => {
+        const execute = vi.fn()
+        const wrapper = _mount({
+          props: {
+            actions: [
+              {
+                execute,
+                label: 'X',
+                ...action,
+              },
+            ],
+            duration: 0,
+          },
+        })
+        const button = findActions(wrapper).get('button')
+        for (let i = 0; i < MAGIC_NUMBER; i++) {
+          button.trigger('click')
+        }
+        expect(execute).toHaveBeenCalledTimes(expectedTimes)
+      }
+
+      describe('when true', () => {
+        test.for(
+          actionsWithAllKeepOpenValues.map((action) => ({
+            ...action,
+            disableAfterExecute: true,
+          }))
+        )('will run execute once on every click with: %o', (action) =>
+          testActionCallsCount(action, 1)
+        )
+      })
+
+      describe('when not provided', () => {
+        test.for(
+          actionsWithAllKeepOpenValues.filter(
+            // @ts-expect-error Property 'keepOpen' does not exist on type '{}'.ts(2339)
+            (action) => action.keepOpen !== true
+          )
+        )('will run execute once on many clicks with: %o', (action) =>
+          testActionCallsCount(action, 1)
+        )
+
+        test('will run execute on every click with: { keepOpen: true }', () =>
+          testActionCallsCount({ keepOpen: true }, MAGIC_NUMBER))
+      })
+
+      describe('when false', () => {
+        test.for(
+          actionsWithAllKeepOpenValues.map((action) => ({
+            ...action,
+            disableAfterExecute: false,
+          }))
+        )('will run execute on every click with: %o', (action) =>
+          testActionCallsCount(action, MAGIC_NUMBER)
+        )
       })
     })
   })
