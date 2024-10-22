@@ -1,11 +1,10 @@
-import { computed, nextTick, ref, watch } from 'vue'
-import { resolveUnref as toValue, useEventListener } from '@vueuse/core'
+import { computed, ref, watch } from 'vue'
+import { resolveUnref as toValue } from '@vueuse/core'
 import { debugWarn } from '@element-plus/utils'
 
 import type { Ref } from 'vue'
 import type { MaybeComputedRef } from '@vueuse/core'
 import type { ButtonProps } from '@element-plus/element-plus'
-import type { Mutable } from '@element-plus/utils'
 import type { NotificationAction, NotificationProps } from './notification'
 
 export function useVisibility(initial: boolean) {
@@ -160,7 +159,6 @@ function makeAction(
         if (keepOpen === 'until-resolved') {
           await maybePromise
         }
-        // await nextTick()
       } finally {
         if (keepOpen !== true) {
           closeNotification()
