@@ -1,6 +1,7 @@
 import { nextTick } from 'vue'
 import { mount } from '@vue/test-utils'
-import { describe, expect, test, vi } from 'vitest'
+import { configMocks, mockAnimationsApi } from 'jsdom-testing-mocks'
+import { afterAll, afterEach, describe, expect, test, vi } from 'vitest'
 import { TypeComponentsMap } from '@element-plus/utils'
 import * as utils from '@element-plus/utils'
 import { EVENT_CODE } from '@element-plus/constants'
@@ -42,6 +43,13 @@ const hasVisibility =
     wrapper.vm.visible === visibility
 
 describe('Notification.vue', () => {
+  configMocks({
+    afterEach,
+    afterAll,
+  })
+
+  mockAnimationsApi()
+
   describe('render', () => {
     test('basic render test', () => {
       const wrapper = _mount({
