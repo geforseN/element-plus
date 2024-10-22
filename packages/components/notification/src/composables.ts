@@ -30,7 +30,7 @@ function createProgressBarAnimation(duration: number, element: HTMLElement) {
   )
 }
 
-export function useProgressBar(
+export function useProgress(
   showProgressBar: MaybeComputedRef<boolean>,
   duration: MaybeComputedRef<number>,
   mustReset: MaybeComputedRef<boolean>,

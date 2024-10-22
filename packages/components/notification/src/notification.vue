@@ -10,8 +10,8 @@
       :class="[ns.b(), customClass, horizontalClass]"
       :style="positionStyle"
       role="alert"
-      @mouseenter="progressBar.pauseOrReset"
-      @mouseleave="progressBar.resume"
+      @mouseenter="progress.pauseOrReset"
+      @mouseleave="progress.resume"
       @click="onClick"
     >
       <el-icon v-if="iconComponent" :class="[ns.e('icon'), typeClass]">
@@ -47,7 +47,7 @@
       </div>
       <div
         ref="progressBarRef"
-        :hidden="progressBar.mustHide.value"
+        :hidden="progress.mustHide.value"
         :class="[ns.e('progressBar'), typeClass]"
       />
     </div>
@@ -62,7 +62,7 @@ import { ElIcon } from '@element-plus/components/icon'
 import { ElButton } from '@element-plus/components/button'
 import { useGlobalComponentSettings } from '@element-plus/components/config-provider'
 import { notificationEmits, notificationProps } from './notification'
-import { useActions, useProgressBar, useVisibility } from './composables'
+import { useActions, useProgress, useVisibility } from './composables'
 
 import type { CSSProperties } from 'vue'
 
@@ -76,12 +76,12 @@ defineEmits(notificationEmits)
 const { visible, show: open, hide: close } = useVisibility(false)
 
 const onClose = () => {
-  progressBar.cleanup()
+  progress.cleanup()
   props.onClose?.()
 }
 
 const progressBarRef = ref<HTMLElement>()
-const progressBar = useProgressBar(
+const progress = useProgress(
   () => props.showProgressBar,
   () => props.duration,
   () => props.timerControls === 'reset-restart',
@@ -126,16 +126,16 @@ const positionStyle = computed<CSSProperties>(() => {
 
 useEventListener(document, 'keydown', ({ code }: KeyboardEvent) => {
   if (code === EVENT_CODE.delete || code === EVENT_CODE.backspace) {
-    progressBar.pauseOrReset()
+    progress.pauseOrReset()
   } else if (code === EVENT_CODE.esc) {
     close()
   } else {
-    progressBar.resume()
+    progress.resume()
   }
 })
 
 onMounted(() => {
-  progressBar.initialize()
+  progress.initialize()
   nextZIndex()
   open()
 })
