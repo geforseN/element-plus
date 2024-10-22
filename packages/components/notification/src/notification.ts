@@ -22,10 +22,10 @@ export type NotificationAction = {
    */
   keepOpen?: boolean | 'until-resolved'
   /**
-   * @description Disables the action button while the promise from `execute` is pending.
-   * @default keepOpen === 'until-resolved'
+   * @description Disables the action button after calling `execute`.
+   * @default keepOpen !== true
    */
-  disableWhilePending?: boolean
+  disableAfterExecute?: boolean
   button?: Partial<ButtonProps>
 }
 

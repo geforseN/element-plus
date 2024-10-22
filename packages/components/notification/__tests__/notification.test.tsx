@@ -180,8 +180,9 @@ describe('Notification.vue', () => {
       })
       vi.runAllTimers()
       vi.useRealTimers()
-
-      expect(wrapper).toSatisfy(isClosed)
+      vi.waitFor(() => {
+        expect(wrapper).toSatisfy(isClosed)
+      })
     })
 
     test('should be able to prevent close itself when hover over', async () => {
@@ -200,7 +201,9 @@ describe('Notification.vue', () => {
       await wrapper.find('[role=alert]').trigger('mouseleave')
       expect(wrapper).toSatisfy(isOpen)
       vi.runAllTimers()
-      expect(wrapper).toSatisfy(isClosed)
+      await vi.waitFor(() => {
+        expect(wrapper).toSatisfy(isClosed)
+      })
       vi.useRealTimers()
     })
 
@@ -222,9 +225,13 @@ describe('Notification.vue', () => {
         await wrapper.find('[role=alert]').trigger('mouseenter')
         await wrapper.find('[role=alert]').trigger('mouseleave')
         vi.advanceTimersByTime(50)
-        expect(wrapper).toSatisfy(hasVisibility(isVisibleAtEnd))
+        await vi.waitFor(() => {
+          expect(wrapper).toSatisfy(hasVisibility(isVisibleAtEnd))
+        })
         vi.runAllTimers()
-        expect(wrapper).toSatisfy(isClosed)
+        await vi.waitFor(() => {
+          expect(wrapper).toSatisfy(isClosed)
+        })
         vi.useRealTimers()
       }
     )
@@ -303,13 +310,13 @@ describe('Notification.vue', () => {
       wrapper.find('.el-notification__progressBar')
 
     describe.each<{
-      mustRenderProgressBar: boolean
+      hidden: '' | undefined
       name: string
       cases: Partial<NotificationProps>[]
     }>([
       {
-        mustRenderProgressBar: false,
-        name: 'will not render',
+        hidden: '',
+        name: 'will be hidden',
         cases: [
           ...[-4500, 0, 4500].map((duration) => ({
             showProgressBar: false,
@@ -322,8 +329,8 @@ describe('Notification.vue', () => {
         ],
       },
       {
-        mustRenderProgressBar: true,
-        name: 'will render',
+        hidden: undefined,
+        name: 'will be visible',
         cases: [
           {
             showProgressBar: true,
@@ -331,10 +338,10 @@ describe('Notification.vue', () => {
           },
         ],
       },
-    ])('$name', ({ cases, mustRenderProgressBar: expected }) => {
+    ])('$name', ({ cases, hidden: expected }) => {
       test.for(cases)('when props: %o', (props) => {
         const wrapper = _mount({ props })
-        expect(findProgressBar(wrapper).exists()).toBe(expected)
+        expect(findProgressBar(wrapper).attributes('hidden')).toBe(expected)
       })
     })
 
@@ -613,32 +620,33 @@ describe('Notification.vue', () => {
         expect(wrapper).toSatisfy(isOpen)
       })
 
-      // FIXME: it works when test manually
-      test.fails(
-        'FIXME does close the notification with { keepOpen: "until-resolved" }',
-        async () => {
-          vi.useFakeTimers()
-          const timeout = 1000
-          const wrapper = _mount({
-            props: {
-              actions: [
-                {
-                  label: `Close after ${timeout}ms`,
-                  execute: () =>
-                    new Promise((resolve) => setTimeout(resolve, timeout)),
-                  keepOpen: 'until-resolved',
-                },
-              ],
-              duration: 0,
-            },
-          })
-          expect(wrapper).toSatisfy(isOpen)
-          await findActions(wrapper).get('button').trigger('click')
-          vi.advanceTimersByTime(timeout)
+      test('does close the notification with { keepOpen: "until-resolved" }', async () => {
+        const TIMEOUT = 100
+        const execute = vi.fn(
+          () => new Promise<void>((resolve) => setTimeout(resolve, TIMEOUT))
+        )
+        const wrapper = _mount({
+          props: {
+            actions: [
+              {
+                label: `Close after ${TIMEOUT}ms`,
+                execute,
+                keepOpen: 'until-resolved',
+              },
+            ],
+            duration: 0,
+          },
+        })
+        expect(wrapper).toSatisfy(isOpen)
+        expect(execute).not.toHaveBeenCalled()
+        await findActions(wrapper).get('button').trigger('click')
+        expect(execute).toHaveBeenCalled()
+        expect(execute).not.toHaveResolved()
+        await vi.waitFor(() => {
           expect(wrapper).toSatisfy(isClosed)
-          vi.useRealTimers()
-        }
-      )
+        })
+        expect(execute).toHaveResolved()
+      })
     })
   })
 })

@@ -39,19 +39,20 @@ export function useProgressBar(
 ) {
   let animation: Animation | undefined
 
-  function initialize(duration_ = toValue(duration)) {
+  function initialize() {
     const progressBar = templateRef.value
     if (!progressBar) return
     if (animation) {
       animation.cancel()
       animation.onfinish = null
     }
-    console.log('initialize animation', duration_, progressBar)
-    animation = createProgressBarAnimation(duration_, progressBar)
+    const durationValue = toValue(duration)
+    animation = createProgressBarAnimation(durationValue, progressBar)
     animation.play()
-    animation.onfinish = () => {
-      console.log('finish animation')
-      onEnd()
+    if (durationValue > 0) {
+      animation.onfinish = () => {
+        onEnd()
+      }
     }
   }
 
@@ -129,8 +130,7 @@ function makeAction(
   action: NotificationAction,
   closeNotification: () => void
 ): IntervalNotificationAction {
-  const { keepOpen = false, disableWhilePending: disable = keepOpen !== true } =
-    action
+  const { keepOpen = false, disableAfterExecute = keepOpen !== true } = action
   const button = <Mutable<IntervalNotificationAction['button']>>{
     size: 'small',
     ...action.button,
@@ -143,26 +143,21 @@ function makeAction(
     button,
     disabled,
     async onClick() {
-      console.log('onClick')
       try {
-        // await nextTick()
         if (disabled.value) {
           return
         }
-        console.log(disabled.value, 'action.execute')
         const maybePromise = action.execute()
-        if (disable) {
+        if (disableAfterExecute) {
           disabled.value = true
         }
         if (keepOpen === 'until-resolved') {
           await maybePromise
         }
-        await nextTick()
+        // await nextTick()
       } finally {
         if (keepOpen !== true) {
           closeNotification()
-        } else if (!disable) {
-          disabled.value = false
         }
       }
     },

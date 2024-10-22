@@ -45,9 +45,9 @@
           <Close />
         </el-icon>
       </div>
-      <div
+      <progress
         ref="progressBarRef"
-        :hidden="!showProgressBar && !visible"
+        :hidden="!showProgressBar || duration <= 0"
         :class="[ns.e('progressBar'), typeClass]"
       />
     </div>
@@ -86,7 +86,7 @@ const progressBar = useProgressBar(
   () => props.duration,
   () => props.timerControls === 'reset-restart',
   progressBarRef,
-  close
+  () => close()
 )
 
 const { actions: actions_, mustShow: mustShowActions } = useActions(

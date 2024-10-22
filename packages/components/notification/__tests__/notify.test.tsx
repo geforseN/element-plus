@@ -73,12 +73,9 @@ describe('Notification on command', () => {
         })
       )
     }
-    // vi.runAllTicks()
     await rAF()
-
     expect(document.querySelectorAll(selector).length).toBe(4)
     closeAll()
-    // vi.runAllTicks()
     await rAF()
     expect(onClose).toHaveBeenCalledTimes(notifications.length)
     expect(document.querySelectorAll(selector).length).toBe(0)
