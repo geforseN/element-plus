@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, nextTick, ref, watch } from 'vue'
 import { resolveUnref as toValue, useEventListener } from '@vueuse/core'
 import { debugWarn } from '@element-plus/utils'
 
@@ -22,33 +22,46 @@ export function useVisibility(initial: boolean) {
   }
 }
 
+function createProgressBarAnimation(duration: number, element: HTMLElement) {
+  return new Animation(
+    new KeyframeEffect(element, [{ width: '100%' }, { width: '0%' }], {
+      duration,
+      fill: 'forwards',
+    })
+  )
+}
+
 export function useProgressBar(
-  showProgressBar: MaybeComputedRef<NotificationProps['showProgressBar']>,
-  duration: MaybeComputedRef<NotificationProps['duration']>,
-  timerControls: MaybeComputedRef<NotificationProps['timerControls']>,
+  showProgressBar: MaybeComputedRef<boolean>,
+  duration: MaybeComputedRef<number>,
+  mustReset: MaybeComputedRef<boolean>,
   templateRef: Ref<HTMLElement | undefined>,
   onEnd: () => void
 ) {
   let animation: Animation | undefined
 
+  function initialize(duration_ = toValue(duration)) {
+    const progressBar = templateRef.value
+    if (!progressBar) return
+    if (animation) {
+      animation.cancel()
+    }
+    animation = createProgressBarAnimation(duration_, progressBar)
+    useEventListener(animation, 'finish', () => {
+      console.log('finish animation')
+      onEnd()
+    })
+  }
+
+  watch(() => toValue(duration), initialize)
+
   return {
     mustShow: computed(() => toValue(showProgressBar) && toValue(duration) > 0),
-    initialize() {
-      const progressBar = templateRef.value
-      if (!progressBar) return
-      animation = new Animation(
-        new KeyframeEffect(progressBar, [{ width: '100%' }, { width: '0%' }], {
-          duration: toValue(duration),
-          fill: 'forwards',
-        })
-      )
-      useEventListener(animation, 'finish', onEnd)
-      animation.play()
-    },
-    pause() {
+    initialize,
+    pauseOrReset() {
       if (!animation) return
-      const mustResetRemaining = toValue(timerControls) === 'reset-restart'
-      if (mustResetRemaining) {
+      const mustResetAnimation = toValue(mustReset)
+      if (mustResetAnimation) {
         animation.currentTime = toValue(duration)
         animation.play()
       }
@@ -70,7 +83,7 @@ type IntervalNotificationAction = {
   label: string
   button: Partial<ButtonProps>
   disabled: Ref<boolean>
-  onClick: () => Promise<void>
+  onClick: (event: MouseEvent) => Promise<void>
 }
 
 export function useActions(
@@ -115,11 +128,8 @@ function makeAction(
   action: NotificationAction,
   closeNotification: () => void
 ): IntervalNotificationAction {
-  const {
-    keepOpen = false,
-    disableWhilePending = keepOpen === 'until-resolved',
-  } = action
-
+  const { keepOpen = false, disableWhilePending: disable = keepOpen !== true } =
+    action
   const button = <Mutable<IntervalNotificationAction['button']>>{
     size: 'small',
     ...action.button,
@@ -132,20 +142,26 @@ function makeAction(
     button,
     disabled,
     async onClick() {
+      console.log('onClick')
       try {
-        if (disableWhilePending) {
+        // await nextTick()
+        if (disabled.value) {
+          return
+        }
+        console.log(disabled.value, 'action.execute')
+        const maybePromise = action.execute()
+        if (disable) {
           disabled.value = true
         }
-        const maybePromise = action.execute()
         if (keepOpen === 'until-resolved') {
           await maybePromise
         }
+        await nextTick()
       } finally {
-        if (disableWhilePending) {
-          disabled.value = false
-        }
         if (keepOpen !== true) {
           closeNotification()
+        } else if (!disable) {
+          disabled.value = false
         }
       }
     },

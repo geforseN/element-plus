@@ -10,7 +10,7 @@
       :class="[ns.b(), customClass, horizontalClass]"
       :style="positionStyle"
       role="alert"
-      @mouseenter="progressBar.pause"
+      @mouseenter="progressBar.pauseOrReset"
       @mouseleave="progressBar.resume"
       @click="onClick"
     >
@@ -32,7 +32,7 @@
         </div>
         <div v-if="mustShowActions" :class="ns.e('actions')">
           <el-button
-            v-for="action of actions"
+            v-for="action of actions_"
             :key="action.label"
             v-bind="action.button"
             :disabled="action.disabled.value"
@@ -84,12 +84,12 @@ const progressBarRef = ref<HTMLElement>()
 const progressBar = useProgressBar(
   () => props.showProgressBar,
   () => props.duration,
-  () => props.timerControls,
+  () => props.timerControls === 'reset-restart',
   progressBarRef,
   close
 )
 
-const { actions, mustShow: mustShowActions } = useActions(
+const { actions: actions_, mustShow: mustShowActions } = useActions(
   () => props.actions,
   close
 )
@@ -126,7 +126,7 @@ const positionStyle = computed<CSSProperties>(() => {
 
 useEventListener(document, 'keydown', ({ code }: KeyboardEvent) => {
   if (code === EVENT_CODE.delete || code === EVENT_CODE.backspace) {
-    progressBar.pause()
+    progressBar.pauseOrReset()
   } else if (code === EVENT_CODE.esc) {
     close()
   } else {
