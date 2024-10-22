@@ -152,10 +152,10 @@ function makeAction(
     button,
     disabled,
     async onClick() {
+      if (disabled.value) {
+        return
+      }
       try {
-        if (disabled.value) {
-          return
-        }
         const maybePromise = action.execute()
         if (disableAfterExecute) {
           disabled.value = true
