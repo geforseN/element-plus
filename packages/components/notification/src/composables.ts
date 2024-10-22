@@ -31,6 +31,7 @@ function createProgressBarAnimation(duration: number, element: HTMLElement) {
 }
 
 export function useProgressBar(
+  showProgressBar: MaybeComputedRef<boolean>,
   duration: MaybeComputedRef<number>,
   mustReset: MaybeComputedRef<boolean>,
   templateRef: Ref<HTMLElement | undefined>,
@@ -58,6 +59,9 @@ export function useProgressBar(
   watch(() => toValue(duration), initialize)
 
   return {
+    mustHide: computed(
+      () => !(toValue(showProgressBar) && toValue(duration) > 0)
+    ),
     initialize,
     pauseOrReset() {
       if (!animation) return

@@ -47,7 +47,7 @@
       </div>
       <progress
         ref="progressBarRef"
-        :hidden="!showProgressBar || duration <= 0"
+        :hidden="progressBar.mustHide.value"
         :class="[ns.e('progressBar'), typeClass]"
       />
     </div>
@@ -83,6 +83,7 @@ const onClose = () => {
 
 const progressBarRef = ref<HTMLElement>()
 const progressBar = useProgressBar(
+  () => props.showProgressBar,
   () => props.duration,
   () => props.timerControls === 'reset-restart',
   progressBarRef,
