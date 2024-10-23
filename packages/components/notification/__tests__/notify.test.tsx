@@ -9,14 +9,14 @@ import type { NotificationHandle } from '../src/notification'
 
 const selector = '.el-notification'
 
-configMocks({
-  afterEach,
-  afterAll,
-})
-
-mockAnimationsApi()
-
 describe('Notification on command', () => {
+  configMocks({
+    afterEach,
+    afterAll,
+  })
+
+  mockAnimationsApi()
+
   afterEach(() => {
     closeAll()
   })
