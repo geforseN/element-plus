@@ -321,7 +321,7 @@ describe('Notification.vue', () => {
       )
     })
 
-    test('will be visible when duration changes', async () => {
+    test('will be visible when `duration` prop is updated', async () => {
       vi.useFakeTimers()
       const wrapper = __mount({
         duration: 100,
