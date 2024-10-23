@@ -379,6 +379,25 @@ describe('Notification.vue', () => {
         }
       )
     })
+
+    test('will be visible when duration changes', async () => {
+      vi.useFakeTimers()
+      const initialDuration = 100
+      const wrapper = _mount({
+        props: { duration: initialDuration, showProgressBar: true },
+      })
+      vi.advanceTimersByTime(initialDuration / 2)
+      expect(findProgressBar(wrapper).attributes('hidden')).toBeUndefined()
+      const higherDuration = initialDuration * 2
+      wrapper.setProps({ duration: higherDuration })
+      vi.advanceTimersByTime(initialDuration * 0.9)
+      expect(findProgressBar(wrapper).attributes('hidden')).toBeUndefined()
+      expect(wrapper).toSatisfy(isOpen)
+      vi.useRealTimers()
+      await vi.waitFor(() => {
+        expect(wrapper).toSatisfy(isClosed)
+      })
+    })
   })
 
   describe('actions', () => {
