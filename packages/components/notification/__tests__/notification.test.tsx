@@ -393,10 +393,10 @@ describe('Notification.vue', () => {
       vi.advanceTimersByTime(higherDuration * 0.9)
       expect(findProgressBar(wrapper).attributes('hidden')).toBeUndefined()
       expect(wrapper).toSatisfy(isOpen)
-      vi.useRealTimers()
       await vi.waitFor(() => {
         expect(wrapper).toSatisfy(isClosed)
       })
+      vi.useRealTimers()
     })
   })
 
