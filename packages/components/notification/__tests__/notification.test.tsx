@@ -390,7 +390,7 @@ describe('Notification.vue', () => {
       expect(findProgressBar(wrapper).attributes('hidden')).toBeUndefined()
       const higherDuration = initialDuration * 2
       wrapper.setProps({ duration: higherDuration })
-      vi.advanceTimersByTime(initialDuration * 0.9)
+      vi.advanceTimersByTime(higherDuration * 0.9)
       expect(findProgressBar(wrapper).attributes('hidden')).toBeUndefined()
       expect(wrapper).toSatisfy(isOpen)
       vi.useRealTimers()
