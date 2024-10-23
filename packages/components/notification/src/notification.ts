@@ -11,8 +11,27 @@ export const notificationTypes = [
   'error',
 ] as const
 
+export const notificationTimerControls = [
+  'pause-resume',
+  'reset-restart',
+] as const
+
+export const notificationActionKeepOpen = [
+  undefined,
+  false,
+  true,
+  'until-resolved',
+] as const
+
 export type NotificationAction = {
+  /**
+   * @description Action button inner text.
+   * Must be unique and non-empty.
+   */
   label: string
+  /**
+   * @description Listener for `click` event of action button.
+   */
   execute(): void | Promise<void>
   /**
    * @description Determines whether to keep the notification open after calling `execute`.
@@ -20,12 +39,18 @@ export type NotificationAction = {
    * If set to `'until-resolved'`, it waits for the promise from `execute` to resolve and then closes the notification.
    * @default false
    */
-  keepOpen?: boolean | 'until-resolved'
+  keepOpen?: typeof notificationActionKeepOpen[number]
   /**
    * @description Disables the action button after calling `execute`.
+   * You probably don't want to do change this as it prevent multiple `execute` calls.
    * @default keepOpen !== true
    */
   disableAfterExecute?: boolean
+  /**
+   * @description Props of `el-button` component.
+   * Will ignore `onclick` properties (case insensitive), use `execute` instead.
+   * @default { size: 'small' }
+   */
   button?: Partial<ButtonProps>
 }
 
@@ -122,8 +147,9 @@ export const notificationProps = buildProps({
    */
   timerControls: {
     type: String,
-    values: ['pause-resume', 'reset-restart'],
-    default: 'reset-restart',
+    values: notificationTimerControls,
+    // TODO: use Typescript `satisfies` instead of cast (current version does not support it)
+    default: 'reset-restart' as typeof notificationTimerControls[number],
   },
   /**
    * @description title
